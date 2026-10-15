@@ -8,28 +8,34 @@ This project is a horror-themed Android game built using the Godot 4 engine. The
 
 ## Current Status
 
-**This repository is in its initial planning and scaffolding phase.**
+This repository has received its first playable prototype scaffold.
 
-- No playable APK exists yet.
-- The game is not yet under active development.
-- Initial project structure, documentation, and CI configuration are being established.
+- First playable prototype added (Godot 4.3 project, scene, and scripts).
+- APK build has NOT yet been verified by GitHub Actions.
+- The game is a low-cost 3D first-person horror prototype set in a dim sleeper train coach.
 
-## Repository Contents
+## Project Structure
 
-- `README.md` — This file.
-- `docs/` — Game design document, technical plan, anomaly catalog, development rules, roadmap, testing checklist, and decision log.
-- `.github/workflows/android-apk.yml` — CI workflow that builds an Android debug APK from the Godot 4 project.
+- `project.godot` — Godot 4.3 project configuration
+- `export_presets.cfg` — Export presets including Android debug APK (arm64-v8a)
+- `scenes/main.tscn` — Sleeper coach scene with primitives (berths, lights, fans, exits, HUD)
+- `scripts/main.gd` — First-person controls, exit logic, anomaly toggle, HUD
 
-## Getting Started
+## Gameplay
 
-1. Clone this repository.
-2. Follow the plans in `docs/` to begin development.
-3. Push the Godot project files to trigger the CI build.
+- First-person movement with WASD/mouse-look and mobile touchscreen joystick/buttons.
+- Dim sleeper coach made from primitives: floor, walls, blue triple berths, door frames, ceiling lights, fan placeholders.
+- Two interactable exit areas: FRONT and REAR.
+- Rules: normal mode → FRONT; anomaly mode → REAR; wrong exit → respawn at S-8.
+- Anomaly toggle demo button included.
+- HUD displays title, time (02:15 AM), and inspect hint.
 
-## Disclaimer
+## Building
 
-This is an early-stage project. The game is not yet playable, and no APK has been built or distributed.
+1. Open this project in Godot 4.3+.
+2. Click **Project → Export → Android** to export a debug APK.
+3. Or use the CI workflow at `.github/workflows/android-apk.yml` to build via GitHub Actions.
 
 ## License
 
-See `LICENSE` file for project licensing details.
+[Add license here]
