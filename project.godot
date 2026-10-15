@@ -1,0 +1,33 @@
+; Godot Engine project file
+; Project: Raat Ki Aakhri Sawari
+; Engine: 4.3 (GL compatibility renderer)
+
+[application]
+
+config/name="Raat Ki Aakhri Sawari"
+config/version="0.1.0"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "Mobile")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/width=1280
+window/size/height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
+window/stretch/shrink=2
+
+[input]
+
+move_forward="ui_up"
+move_backward="ui_down"
+move_left="ui_left"
+move_right="ui_right"
+jump="space"
+sprint="shift"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
