@@ -1,0 +1,46 @@
+name: Android APK Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for project.godot
+        run: |
+          if [ ! -f project.godot ]; then
+            echo "::error::project.godot not found. This is not a valid Godot project directory."
+            echo "Make sure the root of the repository contains the Godot project configuration file."
+            exit 1
+          fi
+
+      - name: Check for export_presets.cfg
+        run: |
+          if [ ! -f export_presets.cfg ]; then
+            echo "::error::export_presets.cfg not found. Android export preset is missing."
+            echo "Create an Android export preset in Godot 4 and commit the resulting export_presets.cfg file."
+            exit 1
+          fi
+
+      - name: Set up Godot 4.x
+        uses: guillaumebaillet/godot-setup-action@v2
+        with:
+          version: 4.3
+          export-templates: true
+
+      - name: Export Android APK
+        run: |
+          godot --headless --export "Android" android.apk
+
+      - name: Upload APK artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: android.apk
