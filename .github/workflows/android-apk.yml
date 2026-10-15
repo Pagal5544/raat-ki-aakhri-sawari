@@ -1,67 +1,75 @@
-name: Android APK Build
+name: Android APK
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download Godot 4.3 Linux headless
-        run: |
-          wget https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip -O godot.zip
-          unzip godot.zip -d godot_bin
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-      - name: Download Godot 4.3 Android export templates
+      - name: Setup Godot Build Environment
         run: |
-          wget https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz -O templates.tpz
-
-      - name: Install export templates
-        run: |
+          echo "=== Godot Version Check ==="
+          curl -L "https://downloads.godotengine.org/godot/4.3/Godot_v4.3-stable_mono_linux.zip" -o godot.zip
+          unzip -o godot.zip
+          export GODOT_BIN="$PWD/Godot_v4.3-stable_mono_linux/Godot_v4.3-stable_mono_linux.64"
+          echo "$PWD/Godot_v4.3-stable_mono_linux" >> $GITHUB_PATH
+          
+          echo "=== Godot --help ==="
+          $GODOT_BIN --help | head -20
+          
+          # Install export templates - handle archive's inner 'templates' directory
+          curl -L "https://github.com/godotengine/godot/releases/download/4.3.stable/Godot_v4.3-stable_export_templates.tgz" -o templates.tgz
           mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          unzip templates.tpz -d templates_temp
-          cp -r templates_temp/templates/* ~/.local/share/godot/export_templates/4.3.stable/
-          rm -rf templates_temp templates.tpz godot.zip
-
-      - name: Set up headless Godot binary
-        run: |
-          chmod +x godot_bin/Godot_v4.3-stable_linux.x86_64
-          echo "GODOT_BIN=$(pwd)/godot_bin/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
-
-      - name: Check for project.godot
-        run: |
-          if [ ! -f project.godot ]; then
-            echo "::error::project.godot not found. This is not a valid Godot project directory."
-            echo "Make sure the root of the repository contains the Godot project configuration file."
-            exit 1
+          tar -xvf templates.tgz
+          # The archive contains a 'templates' inner folder - copy files from it
+          if [ -d templates ]; then
+            cp -r templates/* ~/.local/share/godot/export_templates/4.3.stable/
+          else
+            # Fallback: copy directly
+            tar -xvf templates.tgz -C ~/.local/share/godot/export_templates/4.3.stable
           fi
-
-      - name: Check for export_presets.cfg
-        run: |
-          if [ ! -f export_presets.cfg ]; then
-            echo "::error::export_presets.cfg not found. Android export preset is missing."
-            echo "Create an Android export preset in Godot 4 and commit the resulting export_presets.cfg file."
-            exit 1
-          fi
-
-      - name: Export Android APK
+          rm -rf templates.tgz templates
+          echo "=== Templates installed ==="
+          ls -la ~/.local/share/godot/export_templates/4.3.stable/
+          
+      - name: Export Android APK - Debug
         run: |
           mkdir -p builds
           $GODOT_BIN --headless --export-debug "Android" builds/raat_ki_aakhri_sawari_debug.apk
+          echo "=== Listing Android export presets ==="
+          $GODOT_BIN --headless --list-presets 2>&1 || true
           if [ ! -s builds/raat_ki_aakhri_sawari_debug.apk ]; then
-            echo "::error::APK file is empty or missing."
+            echo "::error::Debug APK file is empty or missing."
             exit 1
           fi
-
-      - name: Upload APK artifact
+          echo "Debug APK created successfully."
+          
+      - name: Export Android APK - Release
+        run: |
+          $GODOT_BIN --headless --export-release "Android" builds/raat_ki_aakhri_sawari_release.apk
+          if [ ! -s builds/raat_ki_aakhri_sawari_release.apk ]; then
+            echo "::error::Release APK file is empty or missing."
+            exit 1
+          fi
+          echo "Release APK created successfully."
+          
+      - name: Upload APK artifacts
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: builds/raat_ki_aakhri_sawari_debug.apk
+          name: android-apks
+          path: |
+            builds/raat_ki_aakhri_sawari_debug.apk
+            builds/raat_ki_aakhri_sawari_release.apk
