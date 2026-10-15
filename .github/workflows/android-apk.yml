@@ -5,6 +5,7 @@ on:
     branches: [main]
   workflow_dispatch:
 
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,7 +26,7 @@ jobs:
         run: |
           mkdir -p ~/.local/share/godot/export_templates/4.3.stable
           unzip templates.tpz -d templates_temp
-          cp -r templates_temp/* ~/.local/share/godot/export_templates/4.3.stable/
+          cp -r templates_temp/templates/* ~/.local/share/godot/export_templates/4.3.stable/
           rm -rf templates_temp templates.tpz godot.zip
 
       - name: Set up headless Godot binary
@@ -51,11 +52,16 @@ jobs:
 
       - name: Export Android APK
         run: |
-          $GODOT_BIN --headless --export "Android" android.apk
+          mkdir -p builds
+          $GODOT_BIN --headless --export-debug "Android" builds/raat_ki_aakhri_sawari_debug.apk
+          if [ ! -s builds/raat_ki_aakhri_sawari_debug.apk ]; then
+            echo "::error::APK file is empty or missing."
+            exit 1
+          fi
 
       - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: android.apk
+          path: builds/raat_ki_aakhri_sawari_debug.apk
