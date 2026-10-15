@@ -1,4 +1,4 @@
-name: Android APK
+name: Android APK Build
 
 on:
   push:
@@ -21,26 +21,28 @@ jobs:
       - name: Setup Godot Build Environment
         run: |
           echo "=== Godot Version Check ==="
-          curl -L "https://downloads.godotengine.org/godot/4.3/Godot_v4.3-stable_mono_linux.zip" -o godot.zip
+          # Download from GitHub releases (not downloads.godotengine.org which returns corrupted file)
+          curl -L -o godot.zip "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_mono_linux_x86_64.zip"
           unzip -o godot.zip
-          export GODOT_BIN="$PWD/Godot_v4.3-stable_mono_linux/Godot_v4.3-stable_mono_linux.64"
-          echo "$PWD/Godot_v4.3-stable_mono_linux" >> $GITHUB_PATH
-          
+          export GODOT_BIN="$PWD/Godot_v4.3-stable_mono_linux_x86_64/Godot_v4.3-stable_mono_linux_x86_64"
+          echo "$PWD/Godot_v4.3-stable_mono_linux_x86_64" >> $GITHUB_PATH
+          echo "GODOT_BIN=$GODOT_BIN"
           echo "=== Godot --help ==="
           $GODOT_BIN --help | head -20
           
-          # Install export templates - handle archive's inner 'templates' directory
-          curl -L "https://github.com/godotengine/godot/releases/download/4.3.stable/Godot_v4.3-stable_export_templates.tgz" -o templates.tgz
+          # Install export templates using .tpz format from GitHub releases
+          curl -L -o templates.tpz "https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_mono_export_templates.tpz"
           mkdir -p ~/.local/share/godot/export_templates/4.3.stable
-          tar -xvf templates.tgz
-          # The archive contains a 'templates' inner folder - copy files from it
+          # .tpz is a gzip-compressed tar; extract to get 'templates' folder
+          tar -xvf templates.tpz
           if [ -d templates ]; then
             cp -r templates/* ~/.local/share/godot/export_templates/4.3.stable/
           else
-            # Fallback: copy directly
-            tar -xvf templates.tgz -C ~/.local/share/godot/export_templates/4.3.stable
+            echo "ERROR: templates folder not found after extraction!"
+            ls -la
+            exit 1
           fi
-          rm -rf templates.tgz templates
+          rm -rf templates.tpz templates
           echo "=== Templates installed ==="
           ls -la ~/.local/share/godot/export_templates/4.3.stable/
           
@@ -49,7 +51,7 @@ jobs:
           mkdir -p builds
           $GODOT_BIN --headless --export-debug "Android" builds/raat_ki_aakhri_sawari_debug.apk
           echo "=== Listing Android export presets ==="
-          $GODOT_BIN --headless --list-presets 2>&1 || true
+          $GODOT_BIN --headless --list-presets 2>&1 | head -30 || true
           if [ ! -s builds/raat_ki_aakhri_sawari_debug.apk ]; then
             echo "::error::Debug APK file is empty or missing."
             exit 1
