@@ -12,6 +12,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Download Godot 4.3 Linux headless
+        run: |
+          wget https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip -O godot.zip
+          unzip godot.zip -d godot_bin
+
+      - name: Download Godot 4.3 Android export templates
+        run: |
+          wget https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz -O templates.tpz
+
+      - name: Install export templates
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+          unzip templates.tpz -d templates_temp
+          cp -r templates_temp/* ~/.local/share/godot/export_templates/4.3.stable/
+          rm -rf templates_temp templates.tpz godot.zip
+
+      - name: Set up headless Godot binary
+        run: |
+          chmod +x godot_bin/Godot_v4.3-stable_linux.x86_64
+          echo "GODOT_BIN=$(pwd)/godot_bin/Godot_v4.3-stable_linux.x86_64" >> $GITHUB_ENV
+
       - name: Check for project.godot
         run: |
           if [ ! -f project.godot ]; then
@@ -28,15 +49,9 @@ jobs:
             exit 1
           fi
 
-      - name: Set up Godot 4.x
-        uses: guillaumebaillet/godot-setup-action@v2
-        with:
-          version: 4.3
-          export-templates: true
-
       - name: Export Android APK
         run: |
-          godot --headless --export "Android" android.apk
+          $GODOT_BIN --headless --export "Android" android.apk
 
       - name: Upload APK artifact
         if: success()
